@@ -1,0 +1,87 @@
+ubuntu-install:
+    $(eval TERRAFORM_VERSION := 0.11.7)
+    $(eval LINUX_DISTRIBUTION := $(shell lsb_release -is))
+    $(eval LINUX_DISTRIBUTION_CODENAME := $(shell lsb_release -cs))
+    $(eval LINUX_DISTRIBUTION_VERSION := $(shell lsb_release -rs))
+
+    $(eval PRE_INSTALL_PACKAGES :=)
+    $(eval INSTALL_PACKAGES :=)
+
+    $(eval MSSQL_DOWNLOADPATH := https://packages.microsoft.com/config/$(shell echo $(LINUX_DISTRIBUTION) | tr A-Z a-z)/$(LINUX_DISTRIBUTION_VERSION)/prod.list)
+    $(eval MSSQL_DOWNLOADPATH_HTTP_CODE := $(shell curl -s -o /dev/null -w "%{http_code}" $(MSSQL_DOWNLOADPATH)))
+
+    # check if mssql tools are already present
+    $(eval SQLCMD_VERSION := $(shell sqlcmd --version))
+
+ifeq ($(shell if [[ $(SQLCMD_VERSION) = *"not found"* ]]; then echo "yes"; fi),)
+    # mssql tools not present - check if they are available for this distribution
+
+ifeq ($(MSSQL_DOWNLOADPATH_HTTP_CODE),"404")
+    # mssql tools not available for this linux distribution
+
+    $(info Tried to open URL, but received error: $(MSSQL_DOWNLOADPATH))
+    $(error MSSQL tools are not available for your linux distribution - $(LINUX_DISTRIBUTION) $(LINUX_DISTRIBUTION_VERSION) $(LINUX_DISTRIBUTION_CODENAME) - error code was $(MSSQL_DOWNLOADPATH_HTTP_CODE))
+else
+    # mssql tools not present - adding them to installation list
+    $(eval PRE_INSTALL_PACKAGES := $(PRE_INSTALL_PACKAGES) apt-transport-https)
+    $(eval INSTALL_PACKAGES := $(INSTALL_PACKAGES) mssql-tools unixodbc-dev)
+
+    # add microsoft key to apt ke management
+    curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+
+    # add mssql tools repo to apt repo list
+    curl $(MSSQL_DOWNLOADPATH) | tee /etc/apt/sources.list.d/msprod.list
+endif
+endif
+
+    # check if kubectl is already present
+    $(eval KUBECTL_VERSION := $(shell kubectl version))
+
+ifeq ($(shell if [[$(KUBECTL_VERSION) = *"not found"*]]; then echo "yes"; fi),)
+    # kubectl not present - adding kubectl to installation list
+    $(eval PRE_ INSTALL_PACKAGES := $(PRE_INSTALL_PACKAGES) apt-transport-https)
+    $(eval INSTALL_PACKAGES := $(INSTALL_PACKAGES) kubectl)
+
+    # add kubernetes key to apt key management
+    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+
+    # add kubernetes repo to apt repo list
+    touch /etc/apt/sources.list.d/kubernetes.list
+    echo "deb http://apt.kubernetes.io/ kubernetes-$(LINUX_DISTRIBUTION_CODENAME) main" | tee -a /etc/apt/sources.list.d/kubernetes.list
+endif
+
+    # check if azure-cli is already present
+    $(eval AZ_VERSION = $(shell az --version))
+
+ifeq ($(shell if [[$(AZ_VERSION) = *"not found"*]]; then echo "yes"; fi),)
+    # azure-cli not present - adding azure-cli packages to installation list
+    $(eval PRE_ INSTALL_PACKAGES := $(PRE_INSTALL_PACKAGES) apt-transport-https)
+    $(eval INSTALL_PACKAGES := $(INSTALL_PACKAGES) azure-cli)
+
+    # add microsoft key to apt key management
+    curl -L https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+
+    # add azure repo to apt repo list
+    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(LINUX_DISTRIBUTION_CODENAME) main" | tee /etc/apt/sources.list.d/azure-cli.list
+endif
+
+ifdef PRE_INSTALL_PACKAGES
+ifdef INSTALL_PACKAGES
+    # update package manager db
+    apt-get update
+
+    # install pre_install_packages
+    apt-get install -y $(PRE_INSTALL_PACKAGES)
+
+    # install managed packages
+    apt-get install -y $(INSTALL_PACKAGES)
+else
+    $(info No packages to install - just downloading terraform)
+endif
+else
+    $(info No packages to install - just downloading terraform)
+endif
+
+    # get terraform
+    wget -c -N -P /tmp/ https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
+    unzip -u -d /usr/local/sbin/ /tmp/terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
