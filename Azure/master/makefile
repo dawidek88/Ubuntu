@@ -4,12 +4,12 @@ HOST_WORKER_1=node01
 HOST_WORKER_2=node02
 #CIDR_NETWORK=172.168.10.0/24
 CIDR_NETWORK=10.244.0.0/16
-API_SERVER=192.168.10.70
+API_SERVER=$$(hostname -i)
 #DOCKER_CE=18.06.2~ce~3-0~ubuntu
 #KUBERNETES_VERSION="1.14.0"
 FSTAB=/etc/fstab
 SWAP_IMG=swap.img
-LEINE=1
+
 
 check:
 	@echo ""
@@ -22,17 +22,21 @@ check:
 	@echo \ ""
 	@echo \Please insert number or letter:
 	read lin;
-	@echo "line $$lin"
-ifeq ($(LEINE),"1")
-	@echo "1"; 
+	test=$(lin)
+	@echo "line $(test)"
+
+ifeq ("$(test)", "1")
+	@echo "$$lin is equal"
+else
+	@echo "$$lin is not equal" 
 endif
 
 
-kubernetes_worker: set_hostname install_docker pre_config swap install_kubernetes
+kubernetes_master: set_hostname install_docker pre_config swap install_kubernetes init_kubernetes network_kubernetes
 #kubernetes_master: set_hostname install_docker pre_config install_kubernetes init_kubernetes
 
 set_hostname:
-	@echo "--- SET Hostname - $(HOST_WORKER_1) for Kubernetes-Master ---"
+	@echo "--- SET Hostname - $(HOST_MASTER) for Kubernetes-Master ---"
 	@echo ""
 	sudo hostnamectl set-hostname $(HOST_MASTER)
 	@echo "-----------------------------------------------------------"
@@ -86,7 +90,7 @@ network_kubernetes:
 	echo "-----------------------------------------------------------"
 
 kubernetes_worker:
-	echo "Kubernetes installation - $(HOST_WORKER1)"
+	echo "Kubernetes installation - $(HOST_MASTER)"
 	sudo hostnamectl set-hostname $(HOST_WORKER_1)
 	sudo apt-get install docker.io -y
 	sudo systemctl start docker
@@ -151,10 +155,10 @@ test:
 #	$$(lsb_release -cs) \
 #	stable"
 #	sudo usermod -aG docker $$(whoami)
-	sudo systemctl daemon-reload
-	systemctl restart docker.service
-	docker info | grep Cgroup
+#	sudo systemctl daemon-reload
+#	systemctl restart docker.service
+#	docker info | grep Cgroup
 
-	sudo systemctl daemon-reload
-	systemctl restart kubelet.service
-
+#	sudo systemctl daemon-reload
+#	systemctl restart kubelet.service
+	@echo $(API_SERVER)

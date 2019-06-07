@@ -1,4 +1,4 @@
-   $(eval TERRAFORM_VERSION := 0.11.8)
+   $(eval TERRAFORM_VERSION := 0.11.14)
    $(eval LINUX_DISTRIBUTION := $(shell lsb_release -is))
    $(eval LINUX_DISTRIBUTION_CODENAME := $(shell lsb_release -cs))
    $(eval LINUX_DISTRIBUTION_CODENAME_OLD := xenial)
