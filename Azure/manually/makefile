@@ -23,6 +23,6 @@ group_delete:
 	az group delete --name $(RESOURCE_GROUP)
 
 vm_deallocate:
-	az vm deollcate --name $(HOST_MASTER) --resource-group $(RESOURCE_GROUP)
-	az vm deollcate --name $(HOST_WORKER_1) --resource-group $(RESOURCE_GROUP)
-	az vm deollcate --name $(HOST_WORKER_2) --resource-group $(RESOURCE_GROUP)
+	az vm deallocate --name $(HOST_MASTER) --resource-group $(RESOURCE_GROUP)
+	az vm deallocate --name $(HOST_WORKER_1) --resource-group $(RESOURCE_GROUP)
+	az vm deallocate --name $(HOST_WORKER_2) --resource-group $(RESOURCE_GROUP)
