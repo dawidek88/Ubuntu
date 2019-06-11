@@ -9,6 +9,8 @@ OS_IMAGE=UbuntuLTS
 LOCATION=eastus
 SIZE=Standard_B2s
 
+install_VMs: group_create create_master create_worker
+
 create_master:
 	az vm create --resource-group $(RESOURCE_GROUP)  --name $(HOST_MASTER)   --image $(OS_IMAGE)  --admin-username $(ADMIN_USER) --size $(SIZE)
 
